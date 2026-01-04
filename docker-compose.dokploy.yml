@@ -1,0 +1,77 @@
+services:
+  db:
+    image: mariadb:10.6
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: crater
+      MYSQL_USER: crater
+      MYSQL_PASSWORD: ${CRATER_DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${CRATER_DB_ROOT_PASSWORD}
+    volumes:
+      - crater_db:/var/lib/mysql
+    networks:
+      - dokploy-network
+
+  crater:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - db
+    # Servidor web simple (PHP built-in) para evitar Nginx + mounts de repo
+    command: sh -lc "php -S 0.0.0.0:8000 -t public server.php"
+    ports:
+      - "8000"
+    environment:
+      # DB (Crater usa DB_HOST=db por defecto)
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: crater
+      DB_USERNAME: crater
+      DB_PASSWORD: ${CRATER_DB_PASSWORD}
+      # Dominio (para cookies/login)
+      APP_URL: ${CRATER_APP_URL}
+      SANCTUM_STATEFUL_DOMAINS: ${CRATER_DOMAIN}
+      SESSION_DOMAIN: ${CRATER_DOMAIN}
+      TRUSTED_PROXIES: "*"
+    volumes:
+      - crater_storage:/var/www/storage
+      - crater_public:/var/www/public/storage
+    networks:
+      - dokploy-network
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - crater
+    command: sh -lc "while true; do php artisan schedule:run --no-interaction; sleep 60; done"
+    environment:
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: crater
+      DB_USERNAME: crater
+      DB_PASSWORD: ${CRATER_DB_PASSWORD}
+      APP_URL: ${CRATER_APP_URL}
+      SANCTUM_STATEFUL_DOMAINS: ${CRATER_DOMAIN}
+      SESSION_DOMAIN: ${CRATER_DOMAIN}
+      TRUSTED_PROXIES: "*"
+    volumes:
+      - crater_storage:/var/www/storage
+      - crater_public:/var/www/public/storage
+    networks:
+      - dokploy-network
+
+volumes:
+  crater_db:
+  crater_storage:
+  crater_public:
+
+networks:
+  dokploy-network:
+    external: true
