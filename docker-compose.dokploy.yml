@@ -13,50 +13,12 @@ services:
       - dokploy-network
 
   crater:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        user: crater
-        uid: "1000"
+    image: craterapp/crater:latest
     restart: unless-stopped
     depends_on:
       - db
     ports:
       - "80"
-    environment:
-      APP_ENV: production
-      APP_DEBUG: "false"
-      APP_KEY: ${APP_KEY}
-      APP_URL: ${CRATER_APP_URL}
-
-      DB_CONNECTION: mysql
-      DB_HOST: db
-      DB_PORT: 3306
-      DB_DATABASE: crater
-      DB_USERNAME: crater
-      DB_PASSWORD: ${CRATER_DB_PASSWORD}
-
-      SANCTUM_STATEFUL_DOMAINS: ${CRATER_DOMAIN}
-      SESSION_DOMAIN: ${CRATER_DOMAIN}
-      TRUSTED_PROXIES: "*"
-    volumes:
-      - crater_storage:/var/www/html/storage
-      - crater_public:/var/www/html/public/storage
-    networks:
-      - dokploy-network
-
-  scheduler:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        user: crater
-        uid: "1000"
-    restart: unless-stopped
-    depends_on:
-      - crater
-    command: sh -lc "while true; do php artisan schedule:run --no-interaction; sleep 60; done"
     environment:
       APP_ENV: production
       APP_DEBUG: "false"
