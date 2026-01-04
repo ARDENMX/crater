@@ -3,13 +3,16 @@
 #############################
 # PHP (Crater) - base
 #############################
-FROM php:8.2-fpm-bookworm AS php-base
+# Opción "pin" (más estable): php:8.1.32-fpm-bookworm
+# Opción rolling: php:8.1-fpm-bookworm
+FROM php:8.1.32-fpm-bookworm AS php-base
 
 WORKDIR /var/www
 
 ENV COMPOSER_ALLOW_SUPERUSER=1 \
     COMPOSER_HOME=/tmp
 
+# System deps + PHP extensions
 RUN apt-get update && apt-get install -y --no-install-recommends \
       git curl unzip zip \
       libzip-dev \
@@ -18,16 +21,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       libxml2-dev \
       libcurl4-openssl-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    # IMPORTANTE: agregar exif
     && docker-php-ext-install -j"$(nproc)" \
-      pdo_mysql bcmath mbstring zip gd curl xml \
+      pdo_mysql bcmath mbstring zip gd curl xml exif \
     && rm -rf /var/lib/apt/lists/*
 
+# Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Copia el código (desde el repo)
+# Copia código
 COPY . /var/www
 
-# Instala dependencias PHP (sin scripts para no requerir .env en build)
+# Instala dependencias (lock file)
 RUN composer install \
     --no-dev \
     --prefer-dist \
@@ -36,6 +41,7 @@ RUN composer install \
     --optimize-autoloader \
     --no-scripts
 
+# Prepara dirs requeridos
 RUN mkdir -p storage bootstrap/cache \
  && chown -R www-data:www-data storage bootstrap/cache \
  && chmod -R 775 storage bootstrap/cache
@@ -56,8 +62,8 @@ FROM nginx:1.25-alpine AS nginx
 
 WORKDIR /var/www
 
-# Config nginx (este archivo TIENE que existir en el repo)
+# Config nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copiamos public/ para servir estáticos y tener el root correcto
+# Solo public/
 COPY --from=php-base /var/www/public /var/www/public
