@@ -27,12 +27,16 @@ services:
     depends_on:
       - db
     environment:
+      # Laravel / Crater
       APP_ENV: production
       APP_DEBUG: "false"
       APP_URL: ${CRATER_APP_URL}
-      # PONLO después de generarlo (abajo te digo cómo)
       APP_KEY: ${CRATER_APP_KEY}
 
+      # 🔴 CLAVE PARA EVITAR "Please provide a valid cache path"
+      VIEW_COMPILED_PATH: /var/www/storage/framework/views
+
+      # Database
       DB_CONNECTION: mysql
       DB_HOST: db
       DB_PORT: 3306
@@ -42,17 +46,19 @@ services:
 
       TRUSTED_PROXIES: "*"
     volumes:
-      # 👇 ESTO es lo que hace que exista "artisan" (monta el repo)
+      # Código (necesario para que exista artisan)
       - ./:/var/www
-      # Persistencia de archivos
+
+      # Persistencia
       - crater_storage:/var/www/storage
       - crater_public:/var/www/public/storage
-      # Config PHP (si existe en el repo de Crater)
+
+      # Config PHP (si existe en tu repo)
       - ./docker-compose/php/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini:rw,delegated
     networks:
       - dokploy-network
 
-  # Servicio web HTTP (Nginx) => EN DOKPLOY apúntalo a este servicio y puerto 80
+  # Servicio web (NGINX)
   crater:
     image: nginx:1.17-alpine
     restart: unless-stopped
@@ -74,6 +80,9 @@ services:
     restart: unless-stopped
     depends_on:
       - app
+    environment:
+      # 🔴 MISMO FIX TAMBIÉN AQUÍ
+      VIEW_COMPILED_PATH: /var/www/storage/framework/views
     volumes:
       - ./:/var/www
       - crater_storage:/var/www/storage
