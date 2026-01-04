@@ -16,41 +16,86 @@ mkdir -p \
   bootstrap/cache
 
 chown -R www-data:www-data storage bootstrap/cache || true
-chmod -R 775 storage bootstrap/cache || true
+chmod -R ug+rwX storage bootstrap/cache || true
 
-# 1) Crear .env si falta (Crater lo requiere)
+# Crear .env si falta
 if [ ! -f .env ]; then
   echo "[entrypoint] .env no existe, creando desde .env.example"
   cp .env.example .env
 fi
 
-# 2) Inyectar variables mínimas al .env (desde env vars del container)
+# Inyectar variables desde ENV -> .env (con quoting/escape seguro)
 php -r '
-$f=".env";
-$c=file_get_contents($f);
-$set=function($k,$v) use (&$c){
-  if($v===false || $v===null || $v==="") return;
-  $v=str_replace(["\r","\n"],"", (string)$v);
-  if(preg_match("/^".$k."=.*/m",$c)) $c=preg_replace("/^".$k."=.*/m",$k."=".$v,$c);
-  else $c.="\n".$k."=".$v;
+$f = ".env";
+$c = file_get_contents($f);
+
+$dotenvVal = function($v) {
+  if ($v === false || $v === null) return null;
+  $v = (string)$v;
+  $v = str_replace(["\r","\n"], "", $v);
+
+  // Si en Dokploy lo pusiste con comillas, se las quitamos
+  if (strlen($v) >= 2) {
+    $first = $v[0];
+    $last  = $v[strlen($v)-1];
+    if (($first === "\"" && $last === "\"") || ($first === "'"'"'" && $last === "'"'"'")) {
+      $v = substr($v, 1, -1);
+    }
+  }
+
+  // Si contiene espacios, #, o comillas -> envolver en " " y escapar
+  if (preg_match("/[\\s#\\\"'"'"']/u", $v)) {
+    $v = str_replace(["\\\\", "\""], ["\\\\\\\\", "\\\""], $v);
+    return "\"".$v."\"";
+  }
+
+  return $v;
 };
+
+$set = function($k, $v) use (&$c, $dotenvVal) {
+  $v = $dotenvVal($v);
+  if ($v === null || $v === "") return;
+
+  $pattern = "/^" . preg_quote($k, "/") . "=.*/m";
+  $line = $k . "=" . $v;
+
+  if (preg_match($pattern, $c)) $c = preg_replace($pattern, $line, $c);
+  else $c .= "\n" . $line;
+};
+
 $set("APP_ENV", getenv("APP_ENV") ?: "production");
 $set("APP_DEBUG", getenv("APP_DEBUG") ?: "false");
 $set("APP_URL", getenv("APP_URL"));
 $set("APP_KEY", getenv("APP_KEY"));
+
 $set("DB_CONNECTION", getenv("DB_CONNECTION") ?: "mysql");
 $set("DB_HOST", getenv("DB_HOST") ?: "db");
 $set("DB_PORT", getenv("DB_PORT") ?: "3306");
 $set("DB_DATABASE", getenv("DB_DATABASE") ?: "crater");
 $set("DB_USERNAME", getenv("DB_USERNAME") ?: "crater");
 $set("DB_PASSWORD", getenv("DB_PASSWORD"));
+
+# Mail (importante para tu caso)
+$set("MAIL_MAILER", getenv("MAIL_MAILER") ?: "smtp");
+$set("MAIL_HOST", getenv("MAIL_HOST"));
+$set("MAIL_PORT", getenv("MAIL_PORT"));
+$set("MAIL_USERNAME", getenv("MAIL_USERNAME"));
+$set("MAIL_PASSWORD", getenv("MAIL_PASSWORD"));
+$set("MAIL_ENCRYPTION", getenv("MAIL_ENCRYPTION"));
+$set("MAIL_FROM_ADDRESS", getenv("MAIL_FROM_ADDRESS"));
+$set("MAIL_FROM_NAME", getenv("MAIL_FROM_NAME"));
+
 file_put_contents($f, $c);
 '
 
-# 3) Limpiar caches (si falla, que se vea el error en logs)
-php artisan optimize:clear
+# Limpia caches (si falla, deja logs)
+php artisan optimize:clear || true
 
-# 4) Esperar DB (hasta 60s) y migrar 1 vez
+# storage link (sin reventar si ya existe o no permite symlink)
+rm -rf public/storage 2>/dev/null || true
+ln -s ../storage/app/public public/storage 2>/dev/null || true
+
+# Esperar DB y migrar 1 vez
 if [ ! -f storage/.migrated ]; then
   echo "[entrypoint] esperando DB..."
   i=0
@@ -64,7 +109,7 @@ if [ ! -f storage/.migrated ]; then
   ' >/dev/null 2>&1; do
     i=$((i+1))
     if [ $i -ge 30 ]; then
-      echo "[entrypoint] DB no responde, seguimos para no bloquear (revisar credenciales/red)"
+      echo "[entrypoint] DB no responde, seguimos para no bloquear"
       break
     fi
     sleep 2
