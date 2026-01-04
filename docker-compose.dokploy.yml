@@ -13,7 +13,7 @@ services:
       - dokploy-network
 
   crater:
-    image: craterapp/crater:latest
+    image: craterapp/crater:6.0
     restart: unless-stopped
     depends_on:
       - db
