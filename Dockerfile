@@ -41,12 +41,7 @@ RUN composer install \
     --optimize-autoloader \
     --no-scripts
 
-# .env mínimo para build
-RUN if [ ! -f .env ]; then cp .env.example .env; fi \
- && printf "\nAPP_ENV=production\nAPP_DEBUG=false\nAPP_URL=http://localhost\nAPP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\n" >> .env
 
-# Package discovery manual
-RUN php artisan package:discover --ansi
 
 # Permisos
 RUN mkdir -p storage bootstrap/cache \
