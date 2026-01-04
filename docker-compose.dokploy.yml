@@ -16,23 +16,31 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        user: crater
+        uid: "1000"
     restart: unless-stopped
     depends_on:
       - db
-    # Servidor web simple (PHP built-in) para evitar Nginx + mounts de repo
     command: sh -lc "php -S 0.0.0.0:8000 -t public server.php"
     ports:
       - "8000"
     environment:
-      # DB (Crater usa DB_HOST=db por defecto)
+      # Laravel / Crater
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: ${APP_KEY}
+      APP_URL: ${CRATER_APP_URL}
+
+      # DB
       DB_CONNECTION: mysql
       DB_HOST: db
       DB_PORT: 3306
       DB_DATABASE: crater
       DB_USERNAME: crater
       DB_PASSWORD: ${CRATER_DB_PASSWORD}
-      # Dominio (para cookies/login)
-      APP_URL: ${CRATER_APP_URL}
+
+      # Cookies / Auth (IMPORTANTE)
       SANCTUM_STATEFUL_DOMAINS: ${CRATER_DOMAIN}
       SESSION_DOMAIN: ${CRATER_DOMAIN}
       TRUSTED_PROXIES: "*"
@@ -46,18 +54,26 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        user: crater
+        uid: "1000"
     restart: unless-stopped
     depends_on:
       - crater
     command: sh -lc "while true; do php artisan schedule:run --no-interaction; sleep 60; done"
     environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: ${APP_KEY}
+      APP_URL: ${CRATER_APP_URL}
+
       DB_CONNECTION: mysql
       DB_HOST: db
       DB_PORT: 3306
       DB_DATABASE: crater
       DB_USERNAME: crater
       DB_PASSWORD: ${CRATER_DB_PASSWORD}
-      APP_URL: ${CRATER_APP_URL}
+
       SANCTUM_STATEFUL_DOMAINS: ${CRATER_DOMAIN}
       SESSION_DOMAIN: ${CRATER_DOMAIN}
       TRUSTED_PROXIES: "*"
