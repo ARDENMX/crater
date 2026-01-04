@@ -10,7 +10,6 @@ WORKDIR /var/www
 ENV COMPOSER_ALLOW_SUPERUSER=1 \
     COMPOSER_HOME=/tmp
 
-# System deps + PHP extensions (según requirements de Crater/Laravel)
 RUN apt-get update && apt-get install -y --no-install-recommends \
       git curl unzip zip \
       libzip-dev \
@@ -23,13 +22,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       pdo_mysql bcmath mbstring zip gd curl xml \
     && rm -rf /var/lib/apt/lists/*
 
-# Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Copia código
+# Copia el código (desde el repo)
 COPY . /var/www
 
-# Instala dependencias PHP (sin scripts para evitar requerir .env en build)
+# Instala dependencias PHP (sin scripts para no requerir .env en build)
 RUN composer install \
     --no-dev \
     --prefer-dist \
@@ -38,7 +36,6 @@ RUN composer install \
     --optimize-autoloader \
     --no-scripts
 
-# Prepara dirs requeridos
 RUN mkdir -p storage bootstrap/cache \
  && chown -R www-data:www-data storage bootstrap/cache \
  && chmod -R 775 storage bootstrap/cache
@@ -59,8 +56,8 @@ FROM nginx:1.25-alpine AS nginx
 
 WORKDIR /var/www
 
-# Config nginx
+# Config nginx (este archivo TIENE que existir en el repo)
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Solo necesitas el public/ para servir estáticos y validar try_files
+# Copiamos public/ para servir estáticos y tener el root correcto
 COPY --from=php-base /var/www/public /var/www/public

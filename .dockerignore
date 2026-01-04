@@ -6,5 +6,6 @@
 .DS_Store/
 docker-compose.*
 LICENSE
-nginx.conf
 yarn.lock
+!nginx.conf
+!docker/entrypoint.sh
