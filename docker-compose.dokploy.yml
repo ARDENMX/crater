@@ -98,6 +98,23 @@ services:
     networks:
       - dokploy-network
 
+  crater-mcp:
+    build:
+      context: ./Crater_MCP
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - crater
+    environment:
+      CRATER_URL: http://crater:80
+      CRATER_EMAIL: ${CRATER_EMAIL}
+      CRATER_PASSWORD: ${CRATER_PASSWORD}
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    networks:
+      - dokploy-network
+
 volumes:
   crater_db:
   crater_storage:
