@@ -33,6 +33,15 @@ services:
       DB_DATABASE: crater
       DB_USERNAME: crater
       DB_PASSWORD: ${CRATER_DB_PASSWORD}
+      MAIL_MAILER: ${MAIL_MAILER}
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_ENCRYPTION: ${MAIL_ENCRYPTION}
+      MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME}
+
     volumes:
       - crater_storage:/var/www/storage
     networks:
@@ -57,6 +66,15 @@ services:
       DB_DATABASE: crater
       DB_USERNAME: crater
       DB_PASSWORD: ${CRATER_DB_PASSWORD}
+      MAIL_MAILER: ${MAIL_MAILER}
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_ENCRYPTION: ${MAIL_ENCRYPTION}
+      MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME}
+
     volumes:
       - crater_storage:/var/www/storage
     # Compatible con versiones viejas: loop cada 60s
