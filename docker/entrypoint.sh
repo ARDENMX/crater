@@ -60,6 +60,7 @@ $set("DB_DATABASE", getenv("DB_DATABASE") ?: "crater");
 $set("DB_USERNAME", getenv("DB_USERNAME") ?: "crater");
 $set("DB_PASSWORD", getenv("DB_PASSWORD"));
 
+$set("MAIL_DRIVER", getenv("MAIL_MAILER") ?: "smtp");
 $set("MAIL_MAILER", getenv("MAIL_MAILER"));
 $set("MAIL_HOST", getenv("MAIL_HOST"));
 $set("MAIL_PORT", getenv("MAIL_PORT"));
