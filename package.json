@@ -56,5 +56,24 @@
     "vue-router": "^4.0.8",
     "vue3-colorpicker": "^1.0.5",
     "vuedraggable": "^4.1.0"
-  }
+  },
+  "name": "app",
+  "version": "1.0.0",
+  "description": "<img src=\"https://res.cloudinary.com/bytefury/image/upload/v1574149856/Crater/craterframe.png\">",
+  "main": ".eslintrc.js",
+  "directories": {
+    "test": "tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ARDENMX/crater.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ARDENMX/crater/issues"
+  },
+  "homepage": "https://github.com/ARDENMX/crater#readme"
 }
