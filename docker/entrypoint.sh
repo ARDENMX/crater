@@ -26,41 +26,26 @@ fi
 
 # Inyectar variables desde ENV -> .env (con quoting/escape seguro)
 php -r '
-$f = ".env";
-$c = file_get_contents($f);
+$f=".env";
+$c=file_get_contents($f);
 
-$dotenvVal = function($v) {
-  if ($v === false || $v === null) return null;
-  $v = (string)$v;
-  $v = str_replace(["\r","\n"], "", $v);
+$escape=function($v){
+  if($v===false || $v===null || $v==="") return null;
+  $v=str_replace(["\r","\n"],"", (string)$v);
 
-  // Si en Dokploy lo pusiste con comillas, se las quitamos
-  if (strlen($v) >= 2) {
-    $first = $v[0];
-    $last  = $v[strlen($v)-1];
-    if (($first === "\"" && $last === "\"") || ($first === "'"'"'" && $last === "'"'"'")) {
-      $v = substr($v, 1, -1);
-    }
-  }
-
-  // Si contiene espacios, #, o comillas -> envolver en " " y escapar
-  if (preg_match("/[\\s#\\\"'"'"']/u", $v)) {
-    $v = str_replace(["\\\\", "\""], ["\\\\\\\\", "\\\""], $v);
+  // Si tiene espacios o # o comillas, lo guardamos como "..."
+  if(preg_match("/\s|#|\"/", $v)){
+    $v=str_replace(["\\", "\""], ["\\\\", "\\\""], $v);
     return "\"".$v."\"";
   }
-
   return $v;
 };
 
-$set = function($k, $v) use (&$c, $dotenvVal) {
-  $v = $dotenvVal($v);
-  if ($v === null || $v === "") return;
-
-  $pattern = "/^" . preg_quote($k, "/") . "=.*/m";
-  $line = $k . "=" . $v;
-
-  if (preg_match($pattern, $c)) $c = preg_replace($pattern, $line, $c);
-  else $c .= "\n" . $line;
+$set=function($k,$v) use (&$c,$escape){
+  $v=$escape($v);
+  if($v===null) return;
+  if(preg_match("/^".$k."=.*/m",$c)) $c=preg_replace("/^".$k."=.*/m",$k."=".$v,$c);
+  else $c.="\n".$k."=".$v;
 };
 
 $set("APP_ENV", getenv("APP_ENV") ?: "production");
@@ -75,8 +60,7 @@ $set("DB_DATABASE", getenv("DB_DATABASE") ?: "crater");
 $set("DB_USERNAME", getenv("DB_USERNAME") ?: "crater");
 $set("DB_PASSWORD", getenv("DB_PASSWORD"));
 
-# Mail (importante para tu caso)
-$set("MAIL_MAILER", getenv("MAIL_MAILER") ?: "smtp");
+$set("MAIL_MAILER", getenv("MAIL_MAILER"));
 $set("MAIL_HOST", getenv("MAIL_HOST"));
 $set("MAIL_PORT", getenv("MAIL_PORT"));
 $set("MAIL_USERNAME", getenv("MAIL_USERNAME"));
@@ -85,8 +69,9 @@ $set("MAIL_ENCRYPTION", getenv("MAIL_ENCRYPTION"));
 $set("MAIL_FROM_ADDRESS", getenv("MAIL_FROM_ADDRESS"));
 $set("MAIL_FROM_NAME", getenv("MAIL_FROM_NAME"));
 
-file_put_contents($f, $c);
+file_put_contents($f, $c."\n");
 '
+
 
 # Limpia caches (si falla, deja logs)
 php artisan optimize:clear || true
