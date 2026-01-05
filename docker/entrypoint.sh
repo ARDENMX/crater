@@ -33,10 +33,9 @@ $escape=function($v){
   if($v===false || $v===null || $v==="") return null;
   $v=str_replace(["\r","\n"],"", (string)$v);
 
-  // Si tiene espacios, #, comillas, o $, lo guardamos como "..."
-  $hasSpecial = preg_match("/[\s#\"]/", $v) || strpos($v, "$") !== false;
-  if($hasSpecial){
-    $v=str_replace(["\\", "\"", "\$"], ["\\\\", "\\\"", '\\$'], $v);
+  // Si tiene espacios o # o comillas, lo guardamos como "..."
+  if(preg_match("/\s|#|\"/", $v)){
+    $v=str_replace(["\\", "\""], ["\\\\", "\\\""], $v);
     return "\"".$v."\"";
   }
   return $v;
